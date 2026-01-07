@@ -13,10 +13,14 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-const dbRef = ref(db, 'audit_final_v6');
+const dbRef = ref(db, 'audit_analytics_v7');
 let erroresChart;
+let datosLocales = [];
 
-// REGISTRO DE DATOS
+// ESCUCHA DE BUSCADOR
+document.getElementById('filtroNombre').addEventListener('input', () => renderizarApp());
+
+// GUARDAR DATOS
 document.getElementById('btnGuardar').addEventListener('click', () => {
     const cargador = document.getElementById('cargador').value.trim();
     const total = parseInt(document.getElementById('totalBuenos').value) || 0;
@@ -32,36 +36,47 @@ document.getElementById('btnGuardar').addEventListener('click', () => {
             idError, cargador, total, err, refCamion, tipo, comentario,
             fecha: fechaActual.toLocaleDateString(),
             diaSemana: fechaActual.getDay(),
-            timestamp: Date.now()
+            ts: Date.now()
         }).then(() => {
             document.getElementById('cantidadError').value = "0";
             document.getElementById('referencia').value = "";
             document.getElementById('comentario').value = "";
         });
     } else {
-        alert("⚠️ Completa los campos obligatorios.");
+        alert("⚠️ Completa el Operario y Total de Palets.");
     }
 });
 
-// ESCUCHA DE DATOS (KPI + RANKING + GRÁFICO)
+// DESCARGA INICIAL DE NUBE
 onValue(dbRef, (snapshot) => {
     const data = snapshot.val();
-    const lista = data ? Object.keys(data).map(id => ({ id, ...data[id] })) : [];
-    
+    datosLocales = data ? Object.keys(data).map(id => ({ id, ...data[id] })) : [];
+    renderizarApp();
+});
+
+// FUNCIÓN DE RENDERIZADO CON FILTROS
+function renderizarApp() {
+    const filtro = document.getElementById('filtroNombre').value.toLowerCase();
     const tabla = document.getElementById('cuerpoTabla');
     const rankingDiv = document.getElementById('rankingList');
+    
     tabla.innerHTML = ""; rankingDiv.innerHTML = "";
     
     let resumen = {};
     let globalT = 0, globalE = 0;
-    let diasE = [0, 0, 0, 0, 0, 0, 0];
+    let diasSemanaE = [0, 0, 0, 0, 0, 0, 0];
 
-    lista.sort((a,b) => b.timestamp - a.timestamp).forEach(item => {
+    // FILTRADO POR NOMBRE
+    const filtrados = datosLocales.filter(item => 
+        item.cargador.toLowerCase().includes(filtro)
+    );
+
+    filtrados.sort((a,b) => b.ts - a.ts).forEach(item => {
         globalT += item.total;
         globalE += item.err;
         
         let idx = item.diaSemana === 0 ? 6 : item.diaSemana - 1;
-        diasE[idx] += item.err;
+        diasSemanaE[idx] += item.err;
 
         tabla.innerHTML += `
             <tr>
@@ -79,11 +94,15 @@ onValue(dbRef, (snapshot) => {
         resumen[item.cargador].e += item.err;
     });
 
+    // ACTUALIZAR KPIs
     const qG = globalT > 0 ? (((globalT - globalE) / globalT) * 100).toFixed(1) : "100";
-    document.getElementById('globalPerc').innerText = qG + "%";
+    const gEl = document.getElementById('globalPerc');
+    gEl.innerText = qG + "%";
+    gEl.style.color = qG > 98 ? 'var(--green)' : (qG > 95 ? '#ffa500' : 'var(--dhl-red)');
     document.getElementById('globalTotal').innerText = globalT;
     document.getElementById('globalErrors').innerText = globalE;
 
+    // ACTUALIZAR RANKING
     Object.entries(resumen)
     .map(([name, d]) => ({ name, porc: ((d.t - d.e) / d.t * 100), ...d }))
     .sort((a, b) => b.porc - a.porc)
@@ -96,8 +115,9 @@ onValue(dbRef, (snapshot) => {
             </div>`;
     });
 
-    actualizarGrafico(diasE);
-});
+    actualizarGrafico(diasSemanaE);
+    document.getElementById('chartTitle').innerText = filtro ? `📊 Tendencia de: ${filtro.toUpperCase()}` : "📊 Tendencia Semanal de Errores";
+}
 
 function actualizarGrafico(datos) {
     const ctx = document.getElementById('erroresChart').getContext('2d');
@@ -112,12 +132,9 @@ function actualizarGrafico(datos) {
     });
 }
 
-// EXPORTAR A EXCEL
-document.getElementById('btnExportar').addEventListener('click', () => {
-    const table = document.getElementById("tablaAuditoria");
-    const wb = XLSX.utils.table_to_book(table, { sheet: "Auditoria_DHL" });
-    XLSX.writeFile(wb, "Reporte_Calidad_DHL.xlsx");
-});
-
-window.del = (id) => { if(confirm("¿Eliminar registro?")) remove(ref(db, `audit_final_v6/${id}`)); };
-document.getElementById('btnReset').onclick = () => { if(confirm("¿Reiniciar mes?")) remove(dbRef); };
+// EXCEL Y RESET
+document.getElementById('btnExportar').onclick = () => {
+    XLSX.writeFile(XLSX.utils.table_to_book(document.getElementById("tablaAuditoria")), "Reporte_Filtro_DHL.xlsx");
+};
+window.del = (id) => { if(confirm("¿Eliminar?")) remove(ref(db, `audit_analytics_v7/${id}`)); };
+document.getElementById('btnReset').onclick = () => { if(confirm("¿Reiniciar?")) remove(dbRef); };

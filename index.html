@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DHL Quality Audit & BI</title>
+    <title>DHL Quality Audit System v7.0</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -11,16 +11,20 @@
 <body>
 
 <div class="header-dhl">
-    <div class="logo">DHL <span>Supply Chain Quality Analytics</span></div>
+    <div class="logo">DHL <span>Supply Chain Intelligence</span></div>
+</div>
+
+<div class="search-container">
+    <input type="text" id="filtroNombre" placeholder="🔍 Buscar operario para filtrar estadísticas, gráficos e historial...">
 </div>
 
 <div class="kpi-container">
     <div class="kpi-card">
-        <span class="kpi-title">CALIDAD OPERATIVA</span>
+        <span class="kpi-title">CALIDAD FILTRADA</span>
         <span id="globalPerc" class="kpi-value">--%</span>
     </div>
     <div class="kpi-card">
-        <span class="kpi-title">TOTAL PALETS</span>
+        <span class="kpi-title">PALETS ANALIZADOS</span>
         <span id="globalTotal" class="kpi-value">0</span>
     </div>
     <div class="kpi-card">
@@ -35,12 +39,12 @@
         <aside class="card">
             <h3>📝 Nueva Auditoría</h3>
             <div class="form-group">
-                <label>Nombre del Operario:</label>
-                <input type="text" id="cargador" placeholder="Operario responsable">
+                <label>Operario Responsable:</label>
+                <input type="text" id="cargador" placeholder="Nombre completo">
             </div>
             <div class="form-group">
                 <label>Referencia Camión / Albarán:</label>
-                <input type="text" id="referencia" placeholder="Matrícula o ID">
+                <input type="text" id="referencia" placeholder="Ej: Volvo-4422">
             </div>
             <div class="form-group">
                 <label>Total Palets Camión:</label>
@@ -61,7 +65,7 @@
                 </select>
             </div>
             <div class="form-group">
-                <label>Observaciones Técnicas:</label>
+                <label>Observaciones de Auditoría:</label>
                 <textarea id="comentario" rows="3" placeholder="Detallar motivo del error..."></textarea>
             </div>
             <button id="btnGuardar" class="btn-main">💾 GRABAR AUDITORÍA</button>
@@ -69,14 +73,14 @@
 
         <main>
             <div class="card chart-container">
-                <h3>📊 Tendencia de Errores por Día</h3>
+                <h3 id="chartTitle">📊 Tendencia de Errores</h3>
                 <canvas id="erroresChart"></canvas>
             </div>
 
             <div class="ranking-section card">
                 <div class="header-ranking">
                     <h3>🏆 Ranking de Excelencia</h3>
-                    <button id="btnReset" class="btn-reset">🔄 RESET MES</button>
+                    <button id="btnReset" class="btn-reset">🔄 RESET MENSUAL</button>
                 </div>
                 <div id="rankingList" class="ranking-container"></div>
             </div>
@@ -84,7 +88,7 @@
             <div class="card">
                 <div class="header-ranking">
                     <h3>📋 Historial de Trazabilidad</h3>
-                    <button id="btnExportar" class="btn-excel">📗 EXCEL PARA GERENCIA</button>
+                    <button id="btnExportar" class="btn-excel">📗 EXPORTAR FILTRADOS</button>
                 </div>
                 <div class="table-wrapper">
                     <table id="tablaAuditoria">

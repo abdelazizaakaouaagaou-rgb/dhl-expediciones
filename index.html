@@ -3,44 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DHL Calidad - Expediciones</title>
+    <title>DHL Quality Intelligence</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="header-dhl">
-    <div class="logo">DHL <span>Quality & Loading Control</span></div>
+    <div class="logo">DHL <span>Expediciones Quality Control</span></div>
+</div>
+
+<div class="kpi-container">
+    <div class="kpi-card">
+        <span class="kpi-title">CALIDAD GLOBAL</span>
+        <span id="globalPerc" class="kpi-value">--%</span>
+    </div>
+    <div class="kpi-card">
+        <span class="kpi-title">PALETS CARGADOS</span>
+        <span id="globalTotal" class="kpi-value">0</span>
+    </div>
+    <div class="kpi-card">
+        <span class="kpi-title">TOTAL INCIDENCIAS</span>
+        <span id="globalErrors" class="kpi-value">0</span>
+    </div>
 </div>
 
 <div class="container">
     <div class="dashboard-grid">
         
         <aside class="card">
-            <h3>📊 Registro de Carga</h3>
+            <h3>📝 Registro de Carga</h3>
             <div class="form-group">
-                <label>Operario:</label>
-                <input type="text" id="cargador" placeholder="Nombre">
+                <label>Operario / Cargador:</label>
+                <input type="text" id="cargador" placeholder="Nombre completo">
             </div>
             <div class="form-group">
-                <label>Total Palets en Camión (Correctos):</label>
+                <label>Total Palets en Camión:</label>
                 <input type="number" id="totalBuenos" value="33">
             </div>
             <div class="form-group">
-                <label>Palets con Incidencia (Errores):</label>
+                <label>Palets con Error:</label>
                 <input type="number" id="cantidadError" value="0">
             </div>
             <div class="form-group">
                 <label>Tipo de Error:</label>
                 <select id="tipoError">
-                    <option value="Ninguno">✅ Sin Errores</option>
-                    <option value="Perdido">❌ No Cargado</option>
+                    <option value="Ninguno">✅ Carga Perfecta</option>
+                    <option value="Perdido">❌ Palé Perdido</option>
                     <option value="NoFacturado">⚠️ No Facturado</option>
-                    <option value="Sobrante">➕ Sobrante</option>
+                    <option value="Sobrante">➕ Palé Sobrante</option>
                 </select>
             </div>
             <div class="form-group">
-                <label>Referencia/Camión:</label>
-                <input type="text" id="referencia" placeholder="Matrícula o Albarán">
+                <label>Ref. Camión / Albarán:</label>
+                <input type="text" id="referencia" placeholder="Ej: Volvo-4422">
             </div>
             <button id="btnGuardar" class="btn-main">💾 GUARDAR EN NUBE</button>
         </aside>
@@ -48,8 +63,8 @@
         <main>
             <div class="ranking-section card">
                 <div class="header-ranking">
-                    <h3>🏆 Ranking de Calidad (%)</h3>
-                    <button id="btnReset" class="btn-reset">🔄 RESET</button>
+                    <h3>🏆 Ranking de Calidad Operativa</h3>
+                    <button id="btnReset" class="btn-reset">🔄 RESET MENSUAL</button>
                 </div>
                 <div id="rankingList" class="ranking-container"></div>
             </div>
@@ -62,9 +77,10 @@
                             <tr>
                                 <th>FECHA</th>
                                 <th>OPERARIO</th>
+                                <th>CAMIÓN</th>
                                 <th>TOTAL</th>
                                 <th>ERR</th>
-                                <th>CALIDAD</th>
+                                <th>% CALIDAD</th>
                                 <th>ACCION</th>
                             </tr>
                         </thead>

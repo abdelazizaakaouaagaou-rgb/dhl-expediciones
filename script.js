@@ -13,7 +13,9 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-const dbRef = ref(db, 'calidad_expediciones_v3'); // Nueva tabla v3
+const dbRef = ref(db, 'calidad_v4');
+
+let erroresChart; // Variable para el gráfico
 
 // GUARDAR
 document.getElementById('btnGuardar').addEventListener('click', () => {
@@ -22,18 +24,19 @@ document.getElementById('btnGuardar').addEventListener('click', () => {
     const err = parseInt(document.getElementById('cantidadError').value) || 0;
     const refCamion = document.getElementById('referencia').value.trim();
     const tipo = document.getElementById('tipoError').value;
+    const fechaActual = new Date();
 
     if (cargador && total > 0) {
-        push(dbRef, { cargador, total, err, refCamion, tipo, fecha: new Date().toLocaleDateString() })
-        .then(() => {
-            document.getElementById('cantidadError').value = "0";
-            document.getElementById('referencia').value = "";
-            console.log("Guardado correctamente");
+        push(dbRef, { 
+            cargador, total, err, refCamion, tipo, 
+            fecha: fechaActual.toLocaleDateString(),
+            diaSemana: fechaActual.getDay() // 0=Dom, 1=Lun...
         });
-    } else { alert("Completa el nombre y total de palets."); }
+        document.getElementById('cantidadError').value = "0";
+        document.getElementById('referencia').value = "";
+    }
 });
 
-// ACTUALIZAR DASHBOARD
 onValue(dbRef, (snapshot) => {
     const data = snapshot.val();
     const lista = data ? Object.keys(data).map(id => ({ id, ...data[id] })) : [];
@@ -43,58 +46,59 @@ onValue(dbRef, (snapshot) => {
     tabla.innerHTML = ""; rankingDiv.innerHTML = "";
     
     let resumen = {};
-    let globalT = 0; let globalE = 0;
+    let globalT = 0, globalE = 0;
+    let diasErrores = [0, 0, 0, 0, 0, 0, 0]; // Lun a Dom
 
     lista.reverse().forEach(item => {
         globalT += item.total;
         globalE += item.err;
-        const porcIndiv = (((item.total - item.err) / item.total) * 100).toFixed(1);
         
-        tabla.innerHTML += `
-            <tr>
-                <td>${item.fecha}</td>
-                <td><strong>${item.cargador.toUpperCase()}</strong></td>
-                <td>${item.refCamion}</td>
-                <td>${item.total}</td>
-                <td style="color:red">${item.err}</td>
-                <td style="font-weight:bold">${porcIndiv}%</td>
-                <td><button onclick="window.del('${item.id}')" style="border:none; background:none; cursor:pointer;">🗑️</button></td>
-            </tr>`;
+        // Sumar errores al gráfico (ajuste para que Lun sea 0)
+        let idx = item.diaSemana === 0 ? 6 : item.diaSemana - 1;
+        diasErrores[idx] += item.err;
+
+        const porc = (((item.total - item.err) / item.total) * 100).toFixed(1);
+        tabla.innerHTML += `<tr><td>${item.fecha}</td><td>${item.cargador}</td><td>${item.refCamion}</td><td>${item.total}</td><td style="color:red">${item.err}</td><td>${porc}%</td><td><button onclick="window.del('${item.id}')">🗑️</button></td></tr>`;
 
         if(!resumen[item.cargador]) resumen[item.cargador] = { t: 0, e: 0 };
         resumen[item.cargador].t += item.total;
         resumen[item.cargador].e += item.err;
     });
 
-    // Actualizar KPIs Superiores
+    // Actualizar KPIs
     const qGlobal = globalT > 0 ? (((globalT - globalE) / globalT) * 100).toFixed(1) : "100";
-    const gEl = document.getElementById('globalPerc');
-    gEl.innerText = qGlobal + "%";
-    gEl.style.color = qGlobal > 98 ? 'var(--green)' : (qGlobal > 95 ? 'var(--orange)' : 'var(--dhl-red)');
+    document.getElementById('globalPerc').innerText = qGlobal + "%";
     document.getElementById('globalTotal').innerText = globalT;
     document.getElementById('globalErrors').innerText = globalE;
 
-    // Ranking Ordenado con Medallas
+    // Actualizar Ranking
     Object.entries(resumen)
-    .map(([name, data]) => ({ name, porc: ((data.t - data.e) / data.t * 100), ...data }))
+    .map(([name, d]) => ({ name, porc: ((d.t - d.e) / d.t * 100), ...d }))
     .sort((a, b) => b.porc - a.porc)
-    .forEach((op, index) => {
-        const medal = index === 0 ? '🥇' : (index === 1 ? '🥈' : (index === 2 ? '🥉' : ''));
-        const color = op.porc > 98 ? 'var(--green)' : (op.porc > 95 ? 'var(--orange)' : 'var(--dhl-red)');
-        
-        rankingDiv.innerHTML += `
-            <div class="ranking-item" style="border-left-color: ${color}">
-                <div style="display:flex; align-items:center;">
-                    <span class="medal">${medal}</span>
-                    <div class="rank-info">
-                        <span class="rank-name">${op.name.toUpperCase()}</span>
-                        <span class="rank-stats">Palets: ${op.t} | Errores: ${op.e}</span>
-                    </div>
-                </div>
-                <div class="rank-perc" style="color:${color}">${op.porc.toFixed(1)}%</div>
-            </div>`;
+    .forEach((op, i) => {
+        const medal = i === 0 ? '🥇' : (i === 1 ? '🥈' : (i === 2 ? '🥉' : ''));
+        rankingDiv.innerHTML += `<div class="ranking-item" style="border-left-color:${op.porc > 98 ? '#28a745' : '#d40511'}"><span>${medal} <strong>${op.name}</strong></span> <span>${op.porc.toFixed(1)}%</span></div>`;
     });
+
+    actualizarGrafico(diasErrores);
 });
 
-window.del = (id) => { if(confirm("¿Eliminar?")) remove(ref(db, `calidad_expediciones_v3/${id}`)); };
-document.getElementById('btnReset').onclick = () => { if(confirm("¿Resetear mes?")) remove(dbRef); };
+function actualizarGrafico(datos) {
+    const ctx = document.getElementById('erroresChart').getContext('2d');
+    if (erroresChart) erroresChart.destroy();
+    erroresChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
+            datasets: [{
+                label: 'Cantidad de Errores',
+                data: datos,
+                backgroundColor: '#D40511'
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+}
+
+window.del = (id) => { if(confirm("¿Eliminar?")) remove(ref(db, `calidad_v4/${id}`)); };
+document.getElementById('btnReset').onclick = () => { if(confirm("¿Resetear?")) remove(dbRef); };

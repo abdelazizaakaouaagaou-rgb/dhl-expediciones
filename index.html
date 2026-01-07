@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DHL Quality Intelligence</title>
+    <title>DHL Quality Intelligence Pro</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
 <div class="header-dhl">
-    <div class="logo">DHL <span>Expediciones Quality Control</span></div>
+    <div class="logo">DHL <span>Quality & Analytics</span></div>
 </div>
 
 <div class="kpi-container">
@@ -22,7 +23,7 @@
         <span id="globalTotal" class="kpi-value">0</span>
     </div>
     <div class="kpi-card">
-        <span class="kpi-title">TOTAL INCIDENCIAS</span>
+        <span class="kpi-title">TOTAL ERRORES</span>
         <span id="globalErrors" class="kpi-value">0</span>
     </div>
 </div>
@@ -33,11 +34,11 @@
         <aside class="card">
             <h3>📝 Registro de Carga</h3>
             <div class="form-group">
-                <label>Operario / Cargador:</label>
-                <input type="text" id="cargador" placeholder="Nombre completo">
+                <label>Operario:</label>
+                <input type="text" id="cargador" placeholder="Nombre">
             </div>
             <div class="form-group">
-                <label>Total Palets en Camión:</label>
+                <label>Total Palets Camión:</label>
                 <input type="number" id="totalBuenos" value="33">
             </div>
             <div class="form-group">
@@ -54,33 +55,37 @@
                 </select>
             </div>
             <div class="form-group">
-                <label>Ref. Camión / Albarán:</label>
-                <input type="text" id="referencia" placeholder="Ej: Volvo-4422">
+                <label>Ref. Camión:</label>
+                <input type="text" id="referencia" placeholder="Matrícula/Albarán">
             </div>
             <button id="btnGuardar" class="btn-main">💾 GUARDAR EN NUBE</button>
         </aside>
 
         <main>
+            <div class="card chart-container">
+                <h3>📊 Tendencia Semanal de Errores</h3>
+                <canvas id="erroresChart"></canvas>
+            </div>
+
             <div class="ranking-section card">
                 <div class="header-ranking">
-                    <h3>🏆 Ranking de Calidad Operativa</h3>
-                    <button id="btnReset" class="btn-reset">🔄 RESET MENSUAL</button>
+                    <h3>🏆 Top Calidad Operativa</h3>
+                    <button id="btnReset" class="btn-reset">🔄 RESET</button>
                 </div>
                 <div id="rankingList" class="ranking-container"></div>
             </div>
 
             <div class="table-section card">
-                <h3>📋 Historial de Expediciones</h3>
+                <h3>📋 Historial</h3>
                 <div class="table-wrapper">
                     <table>
                         <thead>
                             <tr>
                                 <th>FECHA</th>
                                 <th>OPERARIO</th>
-                                <th>CAMIÓN</th>
                                 <th>TOTAL</th>
                                 <th>ERR</th>
-                                <th>% CALIDAD</th>
+                                <th>%</th>
                                 <th>ACCION</th>
                             </tr>
                         </thead>

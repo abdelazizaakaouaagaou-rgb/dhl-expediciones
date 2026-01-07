@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DHL Calidad - Expediciones</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="header-dhl">
+    <div class="logo">DHL <span>Quality & Loading Control</span></div>
+</div>
+
+<div class="container">
+    <div class="dashboard-grid">
+        
+        <aside class="card">
+            <h3>📊 Registro de Carga</h3>
+            <div class="form-group">
+                <label>Operario:</label>
+                <input type="text" id="cargador" placeholder="Nombre">
+            </div>
+            <div class="form-group">
+                <label>Total Palets en Camión (Correctos):</label>
+                <input type="number" id="totalBuenos" value="33">
+            </div>
+            <div class="form-group">
+                <label>Palets con Incidencia (Errores):</label>
+                <input type="number" id="cantidadError" value="0">
+            </div>
+            <div class="form-group">
+                <label>Tipo de Error:</label>
+                <select id="tipoError">
+                    <option value="Ninguno">✅ Sin Errores</option>
+                    <option value="Perdido">❌ No Cargado</option>
+                    <option value="NoFacturado">⚠️ No Facturado</option>
+                    <option value="Sobrante">➕ Sobrante</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Referencia/Camión:</label>
+                <input type="text" id="referencia" placeholder="Matrícula o Albarán">
+            </div>
+            <button id="btnGuardar" class="btn-main">💾 GUARDAR EN NUBE</button>
+        </aside>
+
+        <main>
+            <div class="ranking-section card">
+                <div class="header-ranking">
+                    <h3>🏆 Ranking de Calidad (%)</h3>
+                    <button id="btnReset" class="btn-reset">🔄 RESET</button>
+                </div>
+                <div id="rankingList" class="ranking-container"></div>
+            </div>
+
+            <div class="table-section card">
+                <h3>📋 Historial de Expediciones</h3>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>FECHA</th>
+                                <th>OPERARIO</th>
+                                <th>TOTAL</th>
+                                <th>ERR</th>
+                                <th>CALIDAD</th>
+                                <th>ACCION</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cuerpoTabla"></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<script type="module" src="script.js"></script>
+</body>
+</html>

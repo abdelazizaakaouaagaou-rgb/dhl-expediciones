@@ -1,0 +1,30 @@
+:root { --dhl-red: #D40511; --dhl-yellow: #FFCC00; --dark: #333; --success: #28a745; }
+body { font-family: 'Segoe UI', sans-serif; background-color: #f4f4f4; margin: 0; padding-bottom: 50px; }
+.header-dhl { background: var(--dhl-red); color: var(--dhl-yellow); padding: 15px; border-bottom: 5px solid var(--dhl-yellow); font-weight: bold; text-align: center; }
+.container { padding: 10px; max-width: 1200px; margin: auto; }
+.dashboard-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
+@media(min-width: 768px) { .dashboard-grid { grid-template-columns: 350px 1fr; } }
+
+.card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 15px; }
+h3 { color: var(--dhl-red); border-bottom: 2px solid var(--dhl-yellow); padding-bottom: 10px; margin-top: 0; font-size: 1rem; }
+.form-group { margin-bottom: 15px; }
+label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 0.9rem; }
+input, select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; }
+
+.btn-main { width: 100%; background: var(--dhl-red); color: white; border: none; padding: 18px; border-radius: 6px; font-weight: bold; font-size: 1.1rem; cursor: pointer; }
+.btn-reset { background: #666; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 0.7rem; }
+
+.ranking-container { display: flex; flex-direction: column; gap: 10px; }
+.ranking-item { 
+    display: flex; justify-content: space-between; align-items: center; 
+    background: #f9f9f9; padding: 15px; border-radius: 8px; border-left: 8px solid var(--success);
+}
+.rank-info { display: flex; flex-direction: column; }
+.rank-name { font-weight: bold; text-transform: uppercase; }
+.rank-stats { font-size: 0.8rem; color: #666; }
+.rank-perc { font-size: 1.4rem; font-weight: bold; color: var(--dark); }
+
+.table-wrapper { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+th { background: var(--dark); color: white; padding: 10px; }
+td { padding: 10px; border-bottom: 1px solid #eee; text-align: center; }

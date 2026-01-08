@@ -13,16 +13,16 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-const dbRef = ref(db, 'audit_analytics_v8');
+const dbRef = ref(db, 'audit_analytics_v9');
 let erroresChart;
-let datosGlobales = []; 
+let datosCache = []; 
 
-// EVENTO DE FILTRADO: Recalcula todo al escribir
+// FILTRO EN TIEMPO REAL
 document.getElementById('filtroNombre').addEventListener('input', () => {
     renderizarTodo();
 });
 
-// GUARDAR
+// GUARDAR NUEVO REGISTRO
 document.getElementById('btnGuardar').addEventListener('click', () => {
     const cargador = document.getElementById('cargador').value.trim();
     const total = parseInt(document.getElementById('totalBuenos').value) || 0;
@@ -30,14 +30,14 @@ document.getElementById('btnGuardar').addEventListener('click', () => {
     const refCamion = document.getElementById('referencia').value.trim();
     const tipo = document.getElementById('tipoError').value;
     const comentario = document.getElementById('comentario').value.trim();
-    const idError = "DHL-" + Math.floor(1000 + Math.random() * 9000);
-    const fecha = new Date();
+    const idError = "DHL-" + Math.floor(1000 + Math.random() * 9999);
+    const fechaActual = new Date();
 
     if (cargador && total > 0) {
         push(dbRef, { 
             idError, cargador, total, err, refCamion, tipo, comentario,
-            fecha: fecha.toLocaleDateString(),
-            diaSemana: fecha.getDay(),
+            fecha: fechaActual.toLocaleDateString(),
+            diaSemana: fechaActual.getDay(),
             ts: Date.now()
         }).then(() => {
             document.getElementById('cantidadError').value = "0";
@@ -47,13 +47,14 @@ document.getElementById('btnGuardar').addEventListener('click', () => {
     }
 });
 
-// CARGA INICIAL
+// CARGAR DATOS DE FIREBASE
 onValue(dbRef, (snapshot) => {
     const data = snapshot.val();
-    datosGlobales = data ? Object.keys(data).map(id => ({ id, ...data[id] })) : [];
+    datosCache = data ? Object.keys(data).map(id => ({ id, ...data[id] })) : [];
     renderizarTodo();
 });
 
+// FUNCIÓN CENTRAL DE FILTRADO Y CÁLCULOS
 function renderizarTodo() {
     const filtro = document.getElementById('filtroNombre').value.toLowerCase();
     const tabla = document.getElementById('cuerpoTabla');
@@ -61,46 +62,49 @@ function renderizarTodo() {
     
     tabla.innerHTML = ""; rankingDiv.innerHTML = "";
     
-    let resumen = {};
-    let globalT = 0, globalE = 0;
-    let diasSemanaE = [0, 0, 0, 0, 0, 0, 0];
+    let resumenOperarios = {};
+    let gT = 0, gE = 0;
+    let barData = [0, 0, 0, 0, 0, 0, 0];
 
-    // FILTRADO DE DATOS
-    const filtrados = datosGlobales.filter(item => 
+    // 1. Filtrar los datos locales según el buscador
+    const datosFiltrados = datosCache.filter(item => 
         item.cargador.toLowerCase().includes(filtro)
     );
 
-    // RECALCULO DE KPIs Y TABLA
-    filtrados.sort((a,b) => b.ts - a.ts).forEach(item => {
-        globalT += item.total;
-        globalE += item.err;
+    // 2. Recalcular TODO en base a los datos filtrados
+    datosFiltrados.sort((a,b) => b.ts - a.ts).forEach(item => {
+        gT += item.total;
+        gE += item.err;
         
-        let idx = item.diaSemana === 0 ? 6 : item.diaSemana - 1;
-        diasSemanaE[idx] += item.err;
+        // Asignar al gráfico (Lunes=0...Domingo=6)
+        let dayIdx = item.diaSemana === 0 ? 6 : item.diaSemana - 1;
+        barData[dayIdx] += item.err;
 
+        // Escribir en la tabla
         tabla.innerHTML += `
             <tr>
                 <td>${item.fecha}</td>
-                <td><span style="background:#eee; padding:2px 5px; border-radius:4px; font-weight:bold">${item.idError}</span></td>
+                <td><span style="background:#eee; padding:3px; border-radius:4px; font-weight:bold">${item.idError}</span></td>
                 <td><strong>${item.cargador.toUpperCase()}</strong></td>
                 <td style="color:${item.err > 0 ? 'red' : 'green'}; font-weight:bold">${item.err}</td>
-                <td style="font-size:0.7rem; color:#666">${item.comentario || '-'}</td>
-                <td class="no-print"><button onclick="window.del('${item.id}')" style="cursor:pointer; border:none; background:none;">🗑️</button></td>
+                <td><small>${item.comentario || '-'}</small></td>
+                <td class="no-print"><button onclick="window.del('${item.id}')">🗑️</button></td>
             </tr>`;
 
-        if(!resumen[item.cargador]) resumen[item.cargador] = { t: 0, e: 0 };
-        resumen[item.cargador].t += item.total;
-        resumen[item.cargador].e += item.err;
+        // Agrupar para el Ranking
+        if(!resumenOperarios[item.cargador]) resumenOperarios[item.cargador] = { t: 0, e: 0 };
+        resumenOperarios[item.cargador].t += item.total;
+        resumenOperarios[item.cargador].e += item.err;
     });
 
-    // ACTUALIZAR PORCENTAJES DINÁMICOS
-    const qG = globalT > 0 ? (((globalT - globalE) / globalT) * 100).toFixed(1) : "100";
-    document.getElementById('globalPerc').innerText = qG + "%";
-    document.getElementById('globalTotal').innerText = globalT;
-    document.getElementById('globalErrors').innerText = globalE;
+    // 3. Actualizar los 3 KPIs de cabecera
+    const calidadFinal = gT > 0 ? (((gT - gE) / gT) * 100).toFixed(1) : "100";
+    document.getElementById('globalPerc').innerText = calidadFinal + "%";
+    document.getElementById('globalTotal').innerText = gT;
+    document.getElementById('globalErrors').innerText = gE;
 
-    // ACTUALIZAR RANKING
-    Object.entries(resumen)
+    // 4. Actualizar Ranking de operarios filtrados
+    Object.entries(resumenOperarios)
     .map(([name, d]) => ({ name, porc: ((d.t - d.e) / d.t * 100), ...d }))
     .sort((a, b) => b.porc - a.porc)
     .forEach((op, i) => {
@@ -112,33 +116,32 @@ function renderizarTodo() {
             </div>`;
     });
 
-    actualizarGrafico(diasSemanaE);
-    document.getElementById('chartTitle').innerText = filtro ? `📊 Tendencia: ${filtro.toUpperCase()}` : "📊 Tendencia Semanal de Errores";
+    actualizarGrafico(barData);
+    document.getElementById('chartTitle').innerText = filtro ? `📊 Rendimiento: ${filtro.toUpperCase()}` : "📊 Tendencia Global de Errores";
 }
 
-function actualizarGrafico(datos) {
+function actualizarGrafico(puntos) {
     const ctx = document.getElementById('erroresChart').getContext('2d');
     if (erroresChart) erroresChart.destroy();
     erroresChart = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
-            datasets: [{ data: datos, backgroundColor: '#D40511', borderRadius: 5 }]
+            datasets: [{ label: 'Errores', data: puntos, backgroundColor: '#D40511', borderRadius: 5 }]
         },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
     });
 }
 
-// PDF Y EXCEL
+// EXPORTACIONES
 document.getElementById('btnPdf').onclick = () => {
-    const element = document.getElementById('area-reporte');
-    const opt = { margin: 10, filename: 'DHL_Report.pdf', html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
-    html2pdf().set(opt).from(element).save();
+    const opt = { margin: 10, filename: 'DHL_Audit.pdf', html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
+    html2pdf().set(opt).from(document.getElementById('main-content')).save();
 };
 
 document.getElementById('btnExportar').onclick = () => {
     XLSX.writeFile(XLSX.utils.table_to_book(document.getElementById("tablaAuditoria")), "Reporte_DHL.xlsx");
 };
 
-window.del = (id) => { if(confirm("¿Eliminar?")) remove(ref(db, `audit_analytics_v8/${id}`)); };
-document.getElementById('btnReset').onclick = () => { if(confirm("¿Reiniciar?")) remove(dbRef); };
+window.del = (id) => { if(confirm("¿Eliminar registro?")) remove(ref(db, `audit_analytics_v9/${id}`)); };
+document.getElementById('btnReset').onclick = () => { if(confirm("¿Borrar historial completo?")) remove(dbRef); };

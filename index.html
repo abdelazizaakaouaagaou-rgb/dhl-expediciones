@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DHL Quality Audit System v8.0</title>
+    <title>DHL Quality Audit System v9.0</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -16,7 +16,7 @@
 </div>
 
 <div class="search-container no-print">
-    <input type="text" id="filtroNombre" placeholder="🔍 Escribe un nombre para filtrar Porcentajes, Gráficos e Historial...">
+    <input type="text" id="filtroNombre" placeholder="🔍 Filtrar operario para actualizar KPIs, Gráficos e Historial...">
 </div>
 
 <div class="kpi-container">
@@ -39,12 +39,24 @@
         
         <aside class="card no-print">
             <h3>📝 Nueva Auditoría</h3>
-            <div class="form-group"><label>Operario Responsable:</label><input type="text" id="cargador" placeholder="Nombre completo"></div>
-            <div class="form-group"><label>Referencia Camión / ID:</label><input type="text" id="referencia" placeholder="Matrícula o Albarán"></div>
-            <div class="form-group"><label>Total Palets Camión:</label><input type="number" id="totalBuenos" value="33"></div>
-            <div class="form-group"><label>Cantidad Errores:</label><input type="number" id="cantidadError" value="0"></div>
             <div class="form-group">
-                <label>Tipo de Error:</label>
+                <label>Operario Responsable:</label>
+                <input type="text" id="cargador" placeholder="Nombre completo">
+            </div>
+            <div class="form-group">
+                <label>Referencia Camión / Albarán:</label>
+                <input type="text" id="referencia" placeholder="Ej: Volvo-4422">
+            </div>
+            <div class="form-group">
+                <label>Total Palets Camión:</label>
+                <input type="number" id="totalBuenos" value="33">
+            </div>
+            <div class="form-group">
+                <label>Cantidad de Errores:</label>
+                <input type="number" id="cantidadError" value="0">
+            </div>
+            <div class="form-group">
+                <label>Causa de la Incidencia:</label>
                 <select id="tipoError">
                     <option value="Ninguno">✅ Carga Correcta</option>
                     <option value="No Facturado">⚠️ No Facturado</option>
@@ -53,13 +65,16 @@
                     <option value="Sobrante">➕ Palé de Más</option>
                 </select>
             </div>
-            <div class="form-group"><label>Comentarios de Auditoría:</label><textarea id="comentario" rows="2" placeholder="Detalles técnicos..."></textarea></div>
-            <button id="btnGuardar" class="btn-main">💾 GRABAR AUDITORÍA</button>
+            <div class="form-group">
+                <label>Observaciones Técnicas:</label>
+                <textarea id="comentario" rows="2" placeholder="Detalles del error..."></textarea>
+            </div>
+            <button id="btnGuardar" class="btn-main">💾 GUARDAR AUDITORÍA</button>
         </aside>
 
-        <main id="area-reporte">
+        <main id="main-content">
             <div class="card chart-container no-print">
-                <h3 id="chartTitle">📊 Tendencia de Errores por Día</h3>
+                <h3 id="chartTitle">📊 Tendencia de Calidad Semanal</h3>
                 <canvas id="erroresChart"></canvas>
             </div>
 
@@ -73,7 +88,7 @@
 
             <div class="card">
                 <div class="header-ranking">
-                    <h3>📋 Historial de Trazabilidad</h3>
+                    <h3>📋 Historial Filtrado</h3>
                     <div class="actions-group">
                         <button id="btnPdf" class="btn-pdf no-print">📄 PDF</button>
                         <button id="btnExportar" class="btn-excel no-print">📗 EXCEL</button>
